@@ -153,6 +153,12 @@
          Off by default because the chooser is also available from launcher settings. -->
     <bool name="show_home_settings_shortcut">false</bool>
 
+    <!-- Moon button next to Settings that starts the TV's chosen screensaver (Google Photos ambient mode, Clock...).
+         Apps cannot start it directly on Google TV, so it starts about 10 s after the press, when Android's
+         shortest idle timeout runs out; any key before then cancels. Needs WRITE_SETTINGS, which
+         build-and-install.sh grants. Also "screensaver_button" in a theme's config.json. -->
+    <bool name="screensaver_button">false</bool>
+
     <!-- Installed launchable apps, including ordinary Android apps. Also settable in config.json. -->
     <bool name="app_library">false</bool>
 

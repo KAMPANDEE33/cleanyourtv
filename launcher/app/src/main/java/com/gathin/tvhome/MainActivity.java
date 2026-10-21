@@ -231,6 +231,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private RecyclerView.OnScrollListener pendingFocusScroll;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private Screensaver screensaver;
     /** Refreshes the network pill when the connection changes: at boot Wi-Fi often connects after Home is shown. */
     private final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
         @Override
@@ -527,6 +528,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             libraryFromTopBar = true;   // closing it goes back to this button, not to the pill after the last row
         });
         btnLibraryTop.setVisibility(cfg.libraryButton && cfg.appLibrary ? View.VISIBLE : View.GONE);
+        View btnScreensaver = findViewById(R.id.btnScreensaver);
+        screensaver = new Screensaver(this, handler);
+        screensaver.register();
+        if (cfg.screensaverButton) {
+            btnScreensaver.setVisibility(View.VISIBLE);
+            btnScreensaver.setOnClickListener(v -> Toast.makeText(this, screensaver.start()
+                    ? R.string.screensaver_soon : R.string.screensaver_no_permission, Toast.LENGTH_LONG).show());
+        }
         iconOnlyButtons = cfg.iconOnlyButtons;
         wifiIconOnly = iconOnlyButtons && cfg.wifiLabelWidth <= 0;
         if (iconOnlyButtons) {
@@ -561,8 +570,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
+        btnScreensaver.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            for (View button : new View[]{btnInputs, btnWifi, btnReorder, btnLibraryTop, btnSettings}) {
+            for (View button : new View[]{btnInputs, btnWifi, btnReorder, btnLibraryTop, btnScreensaver, btnSettings}) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
                         .scaleX(focused ? 1.04f : 1f).scaleY(focused ? 1.04f : 1f)
                         .setDuration(160).start());
@@ -769,11 +779,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         });
     }
 
-    /** Any key on Home restarts the countdown to the idle clock. */
+    /** Any key on Home restarts the countdown to the idle clock, and cancels a pending screensaver start. */
     @Override
     public void onUserInteraction() {
         super.onUserInteraction();
         restartIdleClock();
+        if (screensaver != null && screensaver.pending()) screensaver.restore();
     }
 
     private void restartIdleClock() {
@@ -847,6 +858,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (screensaver != null) screensaver.unregister();
         wallpaperPlayer.close();
         ConnectivityManager cm = getSystemService(ConnectivityManager.class);
         TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);

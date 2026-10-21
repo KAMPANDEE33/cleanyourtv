@@ -17,6 +17,9 @@
     <string name="ethernet">Ethernet</string>
     <string name="offline">Offline</string>
     <string name="not_available">Not available on this TV</string>
+    <string name="screensaver">Screensaver</string>
+    <string name="screensaver_soon">Screensaver in 10 seconds. Press any key to cancel.</string>
+    <string name="screensaver_no_permission">The launcher may not change the screen timeout. Run build-and-install again.</string>
     <string name="cant_open">Can\'t open %1$s</string>
     <string name="date_format">EEEE  d MMMM</string>
     <!-- Date next to the clock on Home; a locale can split it over two lines with \n. -->
