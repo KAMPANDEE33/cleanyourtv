@@ -117,6 +117,7 @@ final class WeatherCard extends View {
             text.setTypeface(medium);
             text.setTextSize(14 * dp);
             text.setColor(0xFFFFFFFF);
+            text.setTextAlign(Paint.Align.RIGHT);
             c.drawText(degrees(forecast.currentTemp), right - emoji.measureText(icon) - 6 * dp, headBase, text);
         }
         float y = (PAD_V + HEAD) * dp;
