@@ -232,6 +232,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Screensaver screensaver;
+    /** Opt-in weather card under the clock (config.xml, weather_place); null when off. */
+    private WeatherCard weatherCard;
+    private Weather weather;
+    private String weatherPlace;
+    private final int[] weatherLoc = new int[2];
     /** Refreshes the network pill when the connection changes: at boot Wi-Fi often connects after Home is shown. */
     private final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
         @Override
@@ -528,6 +533,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             libraryFromTopBar = true;   // closing it goes back to this button, not to the pill after the last row
         });
         btnLibraryTop.setVisibility(cfg.libraryButton && cfg.appLibrary ? View.VISIBLE : View.GONE);
+        if (!cfg.weatherPlace.isEmpty() && !Double.isNaN(cfg.weatherLatitude) && !Double.isNaN(cfg.weatherLongitude)) {
+            setUpWeather(cfg);
+        }
         View btnScreensaver = findViewById(R.id.btnScreensaver);
         screensaver = new Screensaver(this, handler);
         screensaver.register();
@@ -653,6 +661,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onResume() {
         super.onResume();
+        if (weather != null) weather.start();
         // A festival that started or ended while Home was in the background: rebuild with or without it.
         if (festive != festival.active(LocalDate.now())) {
             recreate();
@@ -779,6 +788,57 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         });
     }
 
+    // ---- weather card ----------------------------------------------------------------------------
+
+    private void setUpWeather(Config cfg) {
+        weatherPlace = cfg.weatherPlace;
+        weatherCard = new WeatherCard(this);
+        weatherCard.setAlpha(0f);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams((int) (320 * density),
+                FrameLayout.LayoutParams.WRAP_CONTENT, android.view.Gravity.TOP | android.view.Gravity.START);
+        root.addView(weatherCard, root.indexOfChild(hero) + 1, lp);
+        weather = new Weather(this, handler, cfg.weatherLatitude, cfg.weatherLongitude, (forecast, at) -> {
+            long age = System.currentTimeMillis() - at;
+            String stale = age > 3 * Weather.REFRESH_MS ? getString(R.string.weather_updated,
+                    android.text.format.DateFormat.getTimeFormat(this).format(new java.util.Date(at))) : null;
+            weatherCard.show(weatherPlace, forecast, LocalDate.now(), stale);
+        });
+        // The card follows the name above the dock: same fade, and centred between the clock and that name.
+        root.getViewTreeObserver().addOnPreDrawListener(() -> {
+            placeWeatherCard();
+            return true;
+        });
+    }
+
+    private void placeWeatherCard() {
+        boolean show = weatherCard.hasForecast() && hero.getVisibility() == View.VISIBLE
+                && clockBlock.getVisibility() == View.VISIBLE && racePanel.getVisibility() != View.VISIBLE;
+        float alpha = show ? hero.getAlpha() : 0f;
+        if (weatherCard.getAlpha() != alpha) weatherCard.setAlpha(alpha);
+        if (alpha == 0f) return;
+        root.getLocationInWindow(weatherLoc);
+        int rootX = weatherLoc[0], rootY = weatherLoc[1];
+        clockBlock.getLocationInWindow(weatherLoc);
+        float left = weatherLoc[0] - rootX;
+        float clockBottom = weatherLoc[1] - rootY + clockBlock.getHeight();
+        // As wide as the longest dock app name above the dock, so the card ends where that name does.
+        float widest = 0;
+        for (int i = 0; i < COLUMNS && i < adapter.getItemCount(); i++) {
+            String label = adapter.labelAt(i);
+            if (label != null) widest = Math.max(widest, heroName.getPaint().measureText(label));
+        }
+        int width = Math.round(Math.max(280 * density,
+                Math.min(root.getWidth() * 0.5f, hero.getX() + heroName.getLeft() + widest - left)));
+        ViewGroup.LayoutParams lp = weatherCard.getLayoutParams();
+        if (lp.width != width) {
+            lp.width = width;
+            weatherCard.setLayoutParams(lp);
+        }
+        float nameTop = hero.getY() + heroName.getTop();
+        weatherCard.setX(left);
+        weatherCard.setY(Math.round(clockBottom + (nameTop - clockBottom - weatherCard.getHeight()) / 2f));
+    }
+
     /** Any key on Home restarts the countdown to the idle clock, and cancels a pending screensaver start. */
     @Override
     public void onUserInteraction() {
@@ -795,6 +855,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onPause() {
         super.onPause();
+        if (weather != null) weather.stop();
         root.removeCallbacks(showIdleClock);
         endReorder();   // Home or another app while reordering keeps the order so far
         wallpaperPlayer.stop();
@@ -859,6 +920,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onDestroy() {
         super.onDestroy();
         if (screensaver != null) screensaver.unregister();
+        if (weather != null) weather.shutdown();
         wallpaperPlayer.close();
         ConnectivityManager cm = getSystemService(ConnectivityManager.class);
         TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);

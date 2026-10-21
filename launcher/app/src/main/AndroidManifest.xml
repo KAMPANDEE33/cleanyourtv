@@ -8,6 +8,8 @@
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Only for the opt-in weather card (Weather.java); unused while weather_place is empty. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Screensaver button (Screensaver.java): shortens the idle timeout for one start. An app-op, granted over adb. -->
     <uses-permission android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions" />

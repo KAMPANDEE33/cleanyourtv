@@ -18,6 +18,8 @@
     <string name="offline">Offline</string>
     <string name="not_available">Not available on this TV</string>
     <string name="screensaver">Screensaver</string>
+    <string name="weather_today">Today</string>
+    <string name="weather_updated">Updated %1$s</string>
     <string name="screensaver_soon">Screensaver in 10 seconds. Press any key to cancel.</string>
     <string name="screensaver_no_permission">The launcher may not change the screen timeout. Run build-and-install again.</string>
     <string name="cant_open">Can\'t open %1$s</string>

@@ -157,6 +157,14 @@
          Apps cannot start it directly on Google TV, so it starts about 10 s after the press, when Android's
          shortest idle timeout runs out; any key before then cancels. Needs WRITE_SETTINGS, which
          build-and-install.sh grants. Also "screensaver_button" in a theme's config.json. -->
+    <!-- Weather card under the clock: today and the next two days for one place, from Open-Meteo (free, no key),
+         fetched at most once an hour while Home is open. The only feature that uses the internet; leave the
+         place empty to keep the launcher offline. Latitude and longitude in decimal degrees, e.g. Sofia:
+         42.6977 and 23.3219. Also "weather_place", "weather_latitude", "weather_longitude" in a theme. -->
+    <string name="weather_place" translatable="false"></string>
+    <string name="weather_latitude" translatable="false"></string>
+    <string name="weather_longitude" translatable="false"></string>
+
     <bool name="screensaver_button">false</bool>
 
     <!-- Installed launchable apps, including ordinary Android apps. Also settable in config.json. -->
