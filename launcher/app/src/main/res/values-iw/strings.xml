@@ -19,6 +19,14 @@
     <string name="not_available">לא זמין בטלוויזיה זו</string>
     <string name="screensaver">שומר מסך</string>
     <string name="weather_today">היום</string>
+    <string name="weather_state">מזג אוויר: %1$s</string>
+    <string name="weather_place_state">מיקום מזג האוויר: %1$s</string>
+    <string name="weather_place_none">בחרו עיר</string>
+    <string name="weather_search_title">מיקום מזג האוויר</string>
+    <string name="weather_search_hint">עיר, למשל סופיה</string>
+    <string name="weather_search">חיפוש</string>
+    <string name="weather_no_results">לא נמצאו מקומות עבור "%1$s"</string>
+    <string name="weather_offline">אין חיבור לשירות מזג האוויר</string>
     <string name="weather_updated">עודכן %1$s</string>
     <string name="screensaver_soon">שומר המסך יופעל בעוד 10 שניות. לחצו על מקש כלשהו לביטול.</string>
     <string name="screensaver_no_permission">למסך הבית אין הרשאה לשנות את זמן כיבוי המסך. הריצו שוב את build-and-install.</string>

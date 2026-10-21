@@ -534,7 +534,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             libraryFromTopBar = true;   // closing it goes back to this button, not to the pill after the last row
         });
         btnLibraryTop.setVisibility(cfg.libraryButton && cfg.appLibrary ? View.VISIBLE : View.GONE);
-        if (!cfg.weatherPlace.isEmpty() && !Double.isNaN(cfg.weatherLatitude) && !Double.isNaN(cfg.weatherLongitude)) {
+        if (cfg.weatherOn && !cfg.weatherPlace.isEmpty()
+                && !Double.isNaN(cfg.weatherLatitude) && !Double.isNaN(cfg.weatherLongitude)) {
             setUpWeather(cfg);
         }
         View btnScreensaver = findViewById(R.id.btnScreensaver);

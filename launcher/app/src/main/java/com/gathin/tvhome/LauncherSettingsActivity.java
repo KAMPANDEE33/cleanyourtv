@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,6 +25,8 @@ public final class LauncherSettingsActivity extends Activity {
     private TextView animationsChoice;
     private TextView advancedChoice;
     private TextView followThemeChoice;
+    private TextView weatherChoice;
+    private TextView weatherPlaceChoice;
     private int columns;
     private int rowsBelowDock;
     private boolean animations;
@@ -93,6 +97,20 @@ public final class LauncherSettingsActivity extends Activity {
                         .show();
             }
         });
+        weatherChoice = findViewById(R.id.weatherChoice);
+        weatherChoice.setOnClickListener(v -> {
+            Config current = Config.load(this);
+            // Turning it on with no place yet goes straight to the search; picking a place turns it on.
+            if (!current.weatherOn && !hasWeatherPlace(current)) {
+                showWeatherSearch();
+                return;
+            }
+            choices.edit().putBoolean(Config.WEATHER_ON_KEY, !current.weatherOn).apply();
+            setResult(RESULT_OK);
+            refresh();
+        });
+        weatherPlaceChoice = findViewById(R.id.weatherPlaceChoice);
+        weatherPlaceChoice.setOnClickListener(v -> showWeatherSearch());
         followThemeChoice = findViewById(R.id.followThemeChoice);
         followThemeChoice.setOnClickListener(v -> {
             if (!hasOnTvChoices()) return;
@@ -114,6 +132,79 @@ public final class LauncherSettingsActivity extends Activity {
                 open(new Intent(Settings.ACTION_SETTINGS)));
         refresh();
         columnChoices[Math.max(0, Math.min(columns - 4, 3))].requestFocus();
+    }
+
+    private static boolean hasWeatherPlace(Config c) {
+        return !c.weatherPlace.isEmpty() && !Double.isNaN(c.weatherLatitude) && !Double.isNaN(c.weatherLongitude);
+    }
+
+    /** City name in, a short list of matching places out (Open-Meteo geocoding), OK on one saves it. */
+    private void showWeatherSearch() {
+        EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setHint(R.string.weather_search_hint);
+        input.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
+        String current = Config.load(this).weatherPlace;
+        input.setText(current);
+        input.setSelection(current.length());
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.weather_search_title)
+                .setView(input)
+                .setPositiveButton(R.string.weather_search, (d, which) -> searchPlaces(input.getText().toString()))
+                .setNegativeButton(android.R.string.cancel, null)
+                .create();
+        input.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId != EditorInfo.IME_ACTION_SEARCH && actionId != EditorInfo.IME_ACTION_DONE) return false;
+            dialog.dismiss();
+            searchPlaces(input.getText().toString());
+            return true;
+        });
+        dialog.show();
+    }
+
+    private void searchPlaces(String query) {
+        String q = query.trim();
+        if (q.isEmpty()) return;
+        String url = Places.url(q, java.util.Locale.getDefault().getLanguage());
+        new Thread(() -> {
+            List<Places.Place> found;
+            try {
+                found = Places.parse(Weather.get(url));
+            } catch (Exception e) {
+                found = null;
+            }
+            final List<Places.Place> places = found;
+            runOnUiThread(() -> showPlaces(q, places));
+        }, "place-search").start();
+    }
+
+    private void showPlaces(String query, List<Places.Place> places) {
+        if (isFinishing() || isDestroyed()) return;
+        if (places == null) {
+            Toast.makeText(this, R.string.weather_offline, Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (places.isEmpty()) {
+            Toast.makeText(this, getString(R.string.weather_no_results, query), Toast.LENGTH_LONG).show();
+            return;
+        }
+        String[] labels = new String[places.size()];
+        for (int i = 0; i < labels.length; i++) labels[i] = places.get(i).label();
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.weather_search_title)
+                .setItems(labels, (d, which) -> {
+                    Places.Place p = places.get(which);
+                    choices.edit().putBoolean(Config.WEATHER_ON_KEY, true)
+                            .putString(Config.WEATHER_PLACE_KEY, p.name)
+                            .putString(Config.WEATHER_LABEL_KEY, p.label())
+                            .putString(Config.WEATHER_LAT_KEY, Double.toString(p.latitude))
+                            .putString(Config.WEATHER_LON_KEY, Double.toString(p.longitude))
+                            .apply();
+                    setResult(RESULT_OK);
+                    refresh();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     private void reverseRow(TextView[] views) {
@@ -192,6 +283,11 @@ public final class LauncherSettingsActivity extends Activity {
                         : wallpaperCurrent != null ? wallpaperCurrent
                         : getString(R.string.wallpaper_theme_default)));
         followThemeChoice.setSelected(!hasOnTvChoices());
+        Config current = Config.load(this);
+        weatherChoice.setText(getString(R.string.weather_state,
+                getString(current.weatherOn && hasWeatherPlace(current) ? R.string.on : R.string.off)));
+        weatherPlaceChoice.setText(getString(R.string.weather_place_state,
+                hasWeatherPlace(current) ? current.weatherLabel : getString(R.string.weather_place_none)));
     }
 
     private boolean hasOnTvChoices() {

@@ -38,6 +38,12 @@ final class Config {
     static final String WALLPAPER_NAME = "wallpaper.jpg";
     static final String SETTINGS_NAME = "launcher_settings";
     static final String ROWS_BELOW_DOCK_KEY = "rows_below_dock";
+    /** On-TV weather choices (Launcher settings). Kept by "Follow theme" and theme pushes: they are not looks. */
+    static final String WEATHER_ON_KEY = "weather_on";
+    static final String WEATHER_PLACE_KEY = "weather_place";
+    static final String WEATHER_LABEL_KEY = "weather_place_label";
+    static final String WEATHER_LAT_KEY = "weather_latitude";
+    static final String WEATHER_LON_KEY = "weather_longitude";
     static final String WALLPAPER_CHOICE_KEY = "wallpaper_choice";
     private static final String THEME_REVISION_NAME = "theme_revision";
     private static final String THEME_SIGNATURE_KEY = "theme_signature";
@@ -92,6 +98,10 @@ final class Config {
     /** Weather card (config.xml, weather_place/latitude/longitude); empty place or bad numbers: no card. */
     final String weatherPlace;
     final double weatherLatitude, weatherLongitude;
+    /** The card is on: chosen in Launcher settings, or by default whenever a place is configured. */
+    final boolean weatherOn;
+    /** "Sofia, Sofia-Capital, Bulgaria" when chosen on the TV, else the configured place name. */
+    final String weatherLabel;
     /** One line under the clock: CPU, free memory, free storage. Off unless config or a theme turns it on. */
     final boolean showStats;
     /** App library pill after the last Home row (config.xml app_library). */
@@ -140,7 +150,8 @@ final class Config {
                    int columns, int rowsBelowDock, boolean animations, boolean advancedEffects,
                    boolean shamsiDate, String greetingName, boolean moduleCards, boolean reducedMotion, boolean dockTitle, boolean dockRow, boolean reorderButton, boolean showNetworkPill, boolean iconOnlyButtons, boolean libraryButton, int wifiLabelWidth, boolean alwaysShowNames, boolean wallpaperTrueColor, String vpnApp,
                    boolean showHomeSettingsShortcut, boolean screensaverButton,
-                   String weatherPlace, double weatherLatitude, double weatherLongitude, boolean showStats, boolean appLibrary, int backgroundColor, int skyIntensity,
+                   String weatherPlace, double weatherLatitude, double weatherLongitude,
+                   boolean weatherOn, String weatherLabel, boolean showStats, boolean appLibrary, int backgroundColor, int skyIntensity,
                    int[] settingsKeycodes, boolean settingsKeyPanel, boolean wallpaperEnabled, File wallpaper, List<File> wallpapers,
                    int wallpaperRotationMinutes, int wallpaperDim, String wallpaperOrder, boolean overlayApplied,
                    Festival festival, int[] inputKeycodes, List<String> appKeys,
@@ -181,6 +192,8 @@ final class Config {
         this.weatherPlace = weatherPlace;
         this.weatherLatitude = weatherLatitude;
         this.weatherLongitude = weatherLongitude;
+        this.weatherOn = weatherOn;
+        this.weatherLabel = weatherLabel;
         this.showStats = showStats;
         this.appLibrary = appLibrary;
         this.backgroundColor = backgroundColor;
@@ -318,6 +331,14 @@ final class Config {
         if (chosenRows >= 0 && chosenRows <= 3) rowsBelow = chosenRows;
         animations = choices.getBoolean("animations", animations);
         advancedEffects = choices.getBoolean("advanced_effects", advancedEffects);
+        String weatherLabel = weatherPlace;
+        if (choices.contains(WEATHER_PLACE_KEY)) {
+            weatherPlace = choices.getString(WEATHER_PLACE_KEY, weatherPlace);
+            weatherLabel = choices.getString(WEATHER_LABEL_KEY, weatherPlace);
+            weatherLat = choices.getString(WEATHER_LAT_KEY, weatherLat);
+            weatherLon = choices.getString(WEATHER_LON_KEY, weatherLon);
+        }
+        boolean weatherOn = choices.getBoolean(WEATHER_ON_KEY, !weatherPlace.isEmpty());
         File wallpaper = dir != null ? new File(dir, WALLPAPER_NAME) : null;
         if (wallpaper != null && !(wallpaper.isFile() && wallpaper.length() > 0)) wallpaper = null;
         // A theme can also switch the wallpaper off while the file is still there.
@@ -361,7 +382,8 @@ final class Config {
                 packageMap(appBanners), panelService,
                 panelAction, inputAction,
                 Math.max(1, columns), Math.max(0, rowsBelow), animations, advancedEffects,
-                shamsi, greetingName, moduleCards, reducedMotion, dockTitle, dockRow, reorderButton, showNetworkPill, iconOnlyButtons, libraryButton, wifiLabelWidth, alwaysShowNames, wallpaperTrueColor, vpn, homeSettings, screensaverButton, weatherPlace, coordinate(weatherLat, 90), coordinate(weatherLon, 180), showStats, library, background,
+                shamsi, greetingName, moduleCards, reducedMotion, dockTitle, dockRow, reorderButton, showNetworkPill, iconOnlyButtons, libraryButton, wifiLabelWidth, alwaysShowNames, wallpaperTrueColor, vpn, homeSettings, screensaverButton, weatherPlace, coordinate(weatherLat, 90), coordinate(weatherLon, 180),
+                weatherOn, weatherLabel, showStats, library, background,
                 Math.max(0, Math.min(100, skyIntensity)), settingsKeycodes, settingsKeyPanel, wallpaperEnabled, wallpaper,
                 wallpapers, rotationMinutes, wallpaperDim, wallpaperOrder, applied,
                 festival, inputKeycodes, appKeys, json == null ? Collections.emptyList() : raceCalendar(json), cinematic, ambientGlow,

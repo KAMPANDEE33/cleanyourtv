@@ -100,7 +100,8 @@ final class Weather {
         });
     }
 
-    private static String get(String address) throws Exception {
+    /** A small GET (the forecast, a place search); throws on anything but HTTP 200 or over 64 KB. */
+    static String get(String address) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(address).openConnection();
         c.setConnectTimeout(TIMEOUT_MS);
         c.setReadTimeout(TIMEOUT_MS);

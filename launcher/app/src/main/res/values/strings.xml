@@ -19,6 +19,14 @@
     <string name="not_available">Not available on this TV</string>
     <string name="screensaver">Screensaver</string>
     <string name="weather_today">Today</string>
+    <string name="weather_state">Weather: %1$s</string>
+    <string name="weather_place_state">Weather location: %1$s</string>
+    <string name="weather_place_none">choose a city</string>
+    <string name="weather_search_title">Weather location</string>
+    <string name="weather_search_hint">City, for example Sofia</string>
+    <string name="weather_search">Search</string>
+    <string name="weather_no_results">No places found for "%1$s"</string>
+    <string name="weather_offline">Could not reach the weather service</string>
     <string name="weather_updated">Updated %1$s</string>
     <string name="screensaver_soon">Screensaver in 10 seconds. Press any key to cancel.</string>
     <string name="screensaver_no_permission">The launcher may not change the screen timeout. Run build-and-install again.</string>
