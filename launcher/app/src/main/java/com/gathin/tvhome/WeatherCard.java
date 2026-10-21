@@ -112,11 +112,12 @@ final class WeatherCard extends View {
         } else {
             emoji.setTextSize(13 * dp);
             emoji.setTextAlign(Paint.Align.RIGHT);
-            c.drawText(Forecast.icon(forecast.currentCode), right, headBase, emoji);
+            String icon = Forecast.icon(forecast.currentCode);
+            c.drawText(icon, right, headBase, emoji);
             text.setTypeface(medium);
             text.setTextSize(14 * dp);
             text.setColor(0xFFFFFFFF);
-            c.drawText(degrees(forecast.currentTemp), right - 20 * dp, headBase, text);
+            c.drawText(degrees(forecast.currentTemp), right - emoji.measureText(icon) - 6 * dp, headBase, text);
         }
         float y = (PAD_V + HEAD) * dp;
         c.drawLine(left, y, right, y, line);
