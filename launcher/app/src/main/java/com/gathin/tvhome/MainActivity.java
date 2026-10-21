@@ -835,14 +835,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         clockBlock.getLocationInWindow(weatherLoc);
         float left = weatherLoc[0] - rootX;
         float clockBottom = weatherLoc[1] - rootY + clockBlock.getHeight();
-        // As wide as the longest dock app name above the dock, so the card ends where that name does.
+        // As wide as the longest dock app name above the dock, so the card ends where that name does. From the
+        // name's resting place (getLeft), not getX: the name slides 12dp while the dock app changes.
         float widest = 0;
         for (int i = 0; i < COLUMNS && i < adapter.getItemCount(); i++) {
             String label = adapter.labelAt(i);
             if (label != null) widest = Math.max(widest, heroName.getPaint().measureText(label));
         }
         int width = Math.round(Math.max(280 * density,
-                Math.min(root.getWidth() * 0.5f, hero.getX() + heroName.getLeft() + widest - left)));
+                Math.min(root.getWidth() * 0.5f, hero.getLeft() + heroName.getLeft() + widest - left)));
         ViewGroup.LayoutParams lp = weatherCard.getLayoutParams();
         if (lp.width != width) {
             lp.width = width;
