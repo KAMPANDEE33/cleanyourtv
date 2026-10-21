@@ -40,6 +40,22 @@ public class HomeKeyService extends AccessibilityService {
         appScancodes = RemoteKeys.parseAppScancodes(config.appKeys);
     }
 
+    /**
+     * app_keys belong to InputKeyService when it runs too: with both services on, each launched the app, so one
+     * press started it twice (an app that restarts its player on a new launch jumped back to live).
+     */
+    private boolean inputKeyServiceOn() {
+        String enabled = android.provider.Settings.Secure.getString(getContentResolver(),
+                android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        if (enabled == null) return false;
+        for (String component : enabled.split(":")) {
+            android.content.ComponentName c = android.content.ComponentName.unflattenFromString(component);
+            if (c != null && c.getPackageName().equals(getPackageName())
+                    && c.getClassName().equals(InputKeyService.class.getName())) return true;
+        }
+        return false;
+    }
+
     private boolean isSettingsKey(KeyEvent event) {
         if (event.getKeyCode() == KeyEvent.KEYCODE_SETTINGS) return true;
         for (int code : settingsScancodes) if (event.getScanCode() == code) return true;
@@ -51,7 +67,7 @@ public class HomeKeyService extends AccessibilityService {
     protected boolean onKeyEvent(KeyEvent event) {
         // A scancode entry is more specific than any keycode, so it goes first.
         String scanApp = appScancodes.get(event.getScanCode());
-        if (scanApp != null) {
+        if (scanApp != null && !inputKeyServiceOn()) {
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) RemoteKeys.launch(this, scanApp);
             return true;
         }
@@ -65,7 +81,7 @@ public class HomeKeyService extends AccessibilityService {
             return true;
         }
         String app = appKeys.get(event.getKeyCode());
-        if (app != null) {
+        if (app != null && !inputKeyServiceOn()) {
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) RemoteKeys.launch(this, app);
             return true;
         }
