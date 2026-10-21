@@ -237,6 +237,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private Weather weather;
     private String weatherPlace;
     private final int[] weatherLoc = new int[2];
+    private boolean weatherShown;
     /** Refreshes the network pill when the connection changes: at boot Wi-Fi often connects after Home is shown. */
     private final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
         @Override
@@ -811,13 +812,26 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     private void placeWeatherCard() {
-        boolean show = weatherCard.hasForecast() && hero.getVisibility() == View.VISIBLE
-                && clockBlock.getVisibility() == View.VISIBLE && racePanel.getVisibility() != View.VISIBLE;
-        float alpha = show ? hero.getAlpha() : 0f;
-        if (weatherCard.getAlpha() != alpha) weatherCard.setAlpha(alpha);
-        if (alpha == 0f) return;
+        // Shown whenever the dock row rests at its place, whatever has focus (a dock app, the top bar, nothing
+        // yet); it steps aside only when the grid scrolls the dock up into its space.
+        View first = grid.getLayoutManager() == null ? null : grid.getLayoutManager().findViewByPosition(0);
+        View tile = first == null ? null : first.findViewById(R.id.card);
+        boolean docked = tile != null && dockRow
+                && Math.abs(first.getTop() - (int) (6 * density) - grid.getPaddingTop()) <= (int) (8 * density);
+        boolean show = docked && weatherCard.hasForecast() && clockBlock.getVisibility() == View.VISIBLE
+                && racePanel.getVisibility() != View.VISIBLE;
+        if (show != weatherShown) {
+            weatherShown = show;
+            weatherCard.animate().cancel();
+            if (animations && !reducedMotion) weatherCard.animate().alpha(show ? 1f : 0f).setDuration(show ? 260 : 160).start();
+            else weatherCard.setAlpha(show ? 1f : 0f);
+        }
+        if (!show) return;
         root.getLocationInWindow(weatherLoc);
         int rootX = weatherLoc[0], rootY = weatherLoc[1];
+        // The row's place, not the tile's drawn top: a focused tile is scaled up, which would nudge the card.
+        first.getLocationInWindow(weatherLoc);
+        float tileTop = weatherLoc[1] - rootY + tile.getTop();
         clockBlock.getLocationInWindow(weatherLoc);
         float left = weatherLoc[0] - rootX;
         float clockBottom = weatherLoc[1] - rootY + clockBlock.getHeight();
@@ -834,7 +848,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             lp.width = width;
             weatherCard.setLayoutParams(lp);
         }
-        float nameTop = hero.getY() + heroName.getTop();
+        // Where the name above the dock starts (as showHero places it), even while the name is hidden.
+        float nameTop = tileTop - 40 * density - hero.getHeight() + heroName.getTop();
         weatherCard.setX(left);
         weatherCard.setY(Math.round(clockBottom + (nameTop - clockBottom - weatherCard.getHeight()) / 2f));
     }
